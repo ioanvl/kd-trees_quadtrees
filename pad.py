@@ -1,16 +1,13 @@
- def nn_search(self, x, y, bounding_box, current_best=None):
+ def nn_search(self, x, y, bounding_box=None, current_best=None):
         #if (self.x == x) and (self.y == y):
         #    
         #    return True
 
-        if current_best is None:
+        flag = self.in_low_branch(x,y)
+        flag_a = 'low' if flag else 'up'
+        flag_b = 'up' if flag else 'low'
 
-            if self.in_low_branch(x,y):
-                flag_a = low 
-                flag_b = up
-            else:
-                flag_a = up 
-                flag_b = low
+        if current_best is None:
 
             if self.branches[flag_a] is not None:
 
@@ -23,16 +20,6 @@
 
                 # KEEP distance with self as best 
 
-            if self.branches[flag_b] is not None:
-                # check other branch distance
-                    #if viable 
-                        #check branch -- pass cur best
-
-                        # best = other_branch.nn_search( with cur best )
-
-                # return best
-
-
 
         else: #yparxei current best
             
@@ -43,10 +30,13 @@
                 #if viable 
                     #check branch -- pass cur best
                     # best = branch_a.nn_search( with cur best )
-
-            # check branch_b distance
+            pass
+            
+        if self.branches[flag_b] is not None:
+            # check other branch distance
                 #if viable 
                     #check branch -- pass cur best
-                    # best = branch_a.nn_search( with cur best )
 
-            # return best
+                    # best = other_branch.nn_search( with cur best )
+
+        # return best
