@@ -1,3 +1,5 @@
+from math import sqrt
+
 class kd_node():
     def __init__(self, x: float, y: float, dim=0, parent=None):
         self.x = x
@@ -108,6 +110,76 @@ class kd_node():
         self.coords = [self.x, self.y]
 
 # =============================================================================
+
+    def nn_search(self, x, y, bounding_box=None, current_best=None):
+        #if (self.x == x) and (self.y == y):
+        #    
+        #    return True
+        if bounding_box is None:
+            bounding_box = dict()
+            for i in range(len(self.coords)):
+                bounding_box[i] = {'up': None,
+                'low': None}
+
+        flag = self.in_low_branch(x,y)
+        flag_a = 'low' if flag else 'up'
+        flag_b = 'up' if flag else 'low'
+
+        if current_best is None:
+            if self.branches[flag_a] is not None:
+                bb = self.calc_branch_bounding_box(bounding_box, flag_a)
+                current_best = self.branches[flag_a].nn_search(x, y, bb)
+                current_best = self.check_self_dist(current_best)
+            else:
+                dist = sqrt((x - self.x)**2 + (y - self.y)**2)
+                current_best = {
+                    'point': self,
+                    'distance': dist
+                }
+
+
+        else:
+            current_best = self.check_self_dist(current_best)
+
+            if self.branches[flag_a] is not None:
+                bb = self.calc_branch_bounding_box(bounding_box, flag_a)
+                if self.check_branch(x, y, current_best=current_best, bbox=bb):
+                #check branch -- pass cur best
+                    current_best = self.branches[flag_a].nn_search(x, y, bb, current_best=current_best)
+            
+        if self.branches[flag_b] is not None:
+            bb = self.calc_branch_bounding_box(bounding_box, flag_b)
+            if self.check_branch(x, y, current_best=current_best, bbox=bb):
+                #check branch -- pass cur best
+                current_best = self.branches[flag_b].nn_search(x, y, bb, current_best=current_best)
+                    
+        return current_best
+
+    def calc_branch_bounding_box(self, boundind_box, branch):
+        boundind_box[self.dim][branch] = self.coords[self.dim]
+        return boundind_box
+
+    def check_self_dist(self, current_best):
+        dist = sqrt((current_best['point'].x - self.x)**2 + (current_best['point'].y - self.y)**2)
+        if current_best['distance'] < dist:
+            current_best = {
+                'point': self,
+                'distance': dist
+            }
+        return current_best
+
+    def check_branch(self, x, y, current_best, bbox):
+        coords = [x, y]
+        dist = 0
+        for dim in bbox:
+            if (bbox[dim]['up'] is not None)  and (bbox[dim]['up'] > coords[dim]):
+                dim_dist = (bbox[dim]['up'] - coords[dim]) ** 2
+                dist += dim_dist
+            elif (bbox[dim]['low'] is not None)  and (bbox[dim]['low'] < coords[dim]):
+                dim_dist = (bbox[dim]['low'] - coords[dim]) ** 2
+                dist += dim_dist
+        dist = sqrt(dist)
+        return (dist < current_best['distance'])
 
     def print(self, lv=0):
         print(f"[{self.x}, {self.y}]", end='')
