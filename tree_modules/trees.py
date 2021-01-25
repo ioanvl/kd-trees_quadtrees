@@ -18,7 +18,11 @@ class tree():
         self.root = None   
     
     def storage(self):
-        pass
+        if self.root is not None:
+            return self.root.storage()
+        else:
+            return [False]
+        
     def build(self):
         pass
 
@@ -43,7 +47,7 @@ class quad_tree(tree):
         if self.root is not None:
             self.root.add_element(x, y)
         else:
-            self.root = quadtree_node(x, y, dim=0, parent=self)
+            self.root = quadtree_node(x, y)
 
 class kd_tree(tree):
     def add_element(self, x, y):

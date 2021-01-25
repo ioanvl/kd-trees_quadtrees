@@ -149,6 +149,21 @@ class quadtree_node():
 
 # =============================================================================
 
+    def storage(self, prev_list=None):
+        if prev_list is None:
+            prev_list = []
+
+        point = (self.x, self.y)
+        prev_list.append(point)
+
+        for i in self.branches:
+            if self.branches[i] is not None:
+                prev_list = self.branches[i].storage(prev_list)
+
+        return prev_list
+
+# =============================================================================
+
     def print(self, lv=0):
         print(f"[{self.x}, {self.y}]", end='')
         flag = False
