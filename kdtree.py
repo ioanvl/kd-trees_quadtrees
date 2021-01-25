@@ -1,4 +1,5 @@
 from math import sqrt
+import copy
 
 class kd_node():
     def __init__(self, x: float, y: float, dim=0, parent=None):
@@ -21,47 +22,12 @@ class kd_node():
 
     def add_element(self, x, y):
         flag = 'low' if self.in_low_branch(x, y) else 'up'
-#        if self.dim == 0:
-#            if x >= self.x:
-#                flag = 'up'
-#        else:
-#            if y >= self.y:
-#                flag = 'up'
-        
-#        if self.in_low_branch(x, y):
-#            flag = 'low'
-#        else:
-#            flag = 'up'
 
         if self.branches[flag] is None :
             dim = (self.dim + 1) % 2
             self.branches[flag] = kd_node(x, y, dim, parent = self)
         else:
             self.branches[flag].add_element(x, y)
-
-# =============================================================================
-
-    def find_min(self, dim):
-        if self.dim == dim:
-            if self.branches['low'] is None:
-                return self
-            else:
-                return self.branches['low'].find_min(dim)
-        else:
-            point = self
-            if self.branches['low'] is not None:
-                min_left = self.branches['low'].find_min(dim)
-                point = self.min_on_dimension(point, min_left, dim)
-            if self.branches['up'] is not None:
-                min_right = self.branches['up'].find_min(dim)
-                point = self.min_on_dimension(point, min_right, dim)
-            return point
-
-    def min_on_dimension(self, point_a, point_b, dim):
-        if point_a.coords[dim] <= point_b.coords[dim]:
-            return point_a
-        else:
-            return point_b
 
 # =============================================================================
 
@@ -96,6 +62,12 @@ class kd_node():
             else:
                 return False
 
+    # -----------------------------------------------
+
+    def replace_self(self, point):
+        self.x, self.y = point.x, point.y
+        self.coords = [self.x, self.y]
+
     def delete_self(self):
         self.parent.cut_leaf(self)
 
@@ -105,16 +77,49 @@ class kd_node():
                 self.branches[x] = None
                 return
 
-    def replace_self(self, point):
-        self.x, self.y = point.x, point.y
-        self.coords = [self.x, self.y]
+    # -----------------------------------------------
+
+    def find_min(self, dim):
+        if self.dim == dim:
+            if self.branches['low'] is None:
+                return self
+            else:
+                return self.branches['low'].find_min(dim)
+        else:
+            point = self
+            if self.branches['low'] is not None:
+                min_left = self.branches['low'].find_min(dim)
+                point = self.min_on_dimension(point, min_left, dim)
+            if self.branches['up'] is not None:
+                min_right = self.branches['up'].find_min(dim)
+                point = self.min_on_dimension(point, min_right, dim)
+            return point
+
+    def min_on_dimension(self, point_a, point_b, dim):
+        if point_a.coords[dim] <= point_b.coords[dim]:
+            return point_a
+        else:
+            return point_b
 
 # =============================================================================
 
-    def nn_search(self, x, y, bounding_box=None, current_best=None):
-        #if (self.x == x) and (self.y == y):
-        #    
-        #    return True
+    def search_element(self, x, y):
+        if (self.x == x) and (self.y == y):
+            return True
+        elif self.in_low_branch(x,y):
+            if self.branches['low'] is not None:
+                return self.branches['low'].search_element(x,y)
+            else:
+                return False
+        else:
+            if self.branches['up'] is not None:
+                return self.branches['up'].search_element(x,y)
+            else:
+                return False
+
+# =============================================================================
+
+    def knn_search(self, x, y, k=1, bounding_box=None, current_best=None):
         if bounding_box is None:
             bounding_box = dict()
             for i in range(len(self.coords)):
@@ -128,47 +133,71 @@ class kd_node():
         if current_best is None:
             if self.branches[flag_a] is not None:
                 bb = self.calc_branch_bounding_box(bounding_box, flag_a)
-                current_best = self.branches[flag_a].nn_search(x, y, bb)
-                current_best = self.check_self_dist(current_best)
+                current_best = self.branches[flag_a].knn_search(x, y, k, bb)
+                current_best = self.check_self_dist(x, y, k, current_best)
             else:
                 dist = sqrt((x - self.x)**2 + (y - self.y)**2)
-                current_best = {
+                current_best = [{
                     'point': self,
                     'distance': dist
-                }
-
+                }]
 
         else:
-            current_best = self.check_self_dist(current_best)
+            current_best = self.check_self_dist(x, y, k, current_best)
 
             if self.branches[flag_a] is not None:
                 bb = self.calc_branch_bounding_box(bounding_box, flag_a)
                 if self.check_branch(x, y, current_best=current_best, bbox=bb):
                 #check branch -- pass cur best
-                    current_best = self.branches[flag_a].nn_search(x, y, bb, current_best=current_best)
+                    current_best = self.branches[flag_a].knn_search(x, y, k, bb, current_best=current_best)
             
         if self.branches[flag_b] is not None:
             bb = self.calc_branch_bounding_box(bounding_box, flag_b)
             if self.check_branch(x, y, current_best=current_best, bbox=bb):
                 #check branch -- pass cur best
-                current_best = self.branches[flag_b].nn_search(x, y, bb, current_best=current_best)
+                current_best = self.branches[flag_b].knn_search(x, y, k, bb, current_best=current_best)
                     
         return current_best
 
-    def calc_branch_bounding_box(self, boundind_box, branch):
-        boundind_box[self.dim][branch] = self.coords[self.dim]
-        return boundind_box
+    # -----------------------------------------------
 
-    def check_self_dist(self, current_best):
-        dist = sqrt((current_best['point'].x - self.x)**2 + (current_best['point'].y - self.y)**2)
-        if current_best['distance'] < dist:
-            current_best = {
+    def calc_branch_bounding_box(self, boundind_box, branch):
+        bb = copy.deepcopy(boundind_box)
+        bb[self.dim][branch] = self.coords[self.dim]
+        return bb
+
+    def check_self_dist(self, x, y, k, current_best):
+        dist = sqrt((x - self.x)**2 + (y - self.y)**2)
+        if len(current_best) < k:
+            point = {
                 'point': self,
                 'distance': dist
             }
-        return current_best
+            current_best.append(point)
+            return current_best
+        else:
+            worst_best_d = -1
+            worst_id = None
+            for i in range(len(current_best)):
+                if current_best[i]['distance'] > worst_best_d:
+                    worst_best_d = current_best[i]['distance']
+                    worst_id = i
+            
+            if worst_best_d > dist:
+                point = {
+                    'point': self,
+                    'distance': dist
+                }
+                current_best.append(point)
+                del current_best[worst_id]
+            return current_best
 
     def check_branch(self, x, y, current_best, bbox):
+        worst_best_d = -1
+        for i in range(len(current_best)):
+            if current_best[i]['distance'] > worst_best_d:
+                worst_best_d = current_best[i]['distance']
+
         coords = [x, y]
         dist = 0
         for dim in bbox:
@@ -179,7 +208,9 @@ class kd_node():
                 dim_dist = (bbox[dim]['low'] - coords[dim]) ** 2
                 dist += dim_dist
         dist = sqrt(dist)
-        return (dist < current_best['distance'])
+        return (dist < worst_best_d)
+
+# =============================================================================
 
     def print(self, lv=0):
         print(f"[{self.x}, {self.y}]", end='')
