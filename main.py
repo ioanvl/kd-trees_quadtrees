@@ -13,8 +13,8 @@ def test_random_insertions(val_range=100, num_elements=1000, reps=10):
     print("\nRandom element insertion")
     print(f"{num_elements} points, x,y:[0,{val_range}]  -  Avg. of {reps} runs")
     for _ in tqdm(range(reps)):
-        q = kd_tree()
-        k = quad_tree()
+        k = kd_tree()
+        q = quad_tree()
         rand_elements = [(random.randrange(val_range), random.randrange(val_range)) for _ in range(num_elements)]
 
         t_s = time()
@@ -38,8 +38,8 @@ def test_random_insertions(val_range=100, num_elements=1000, reps=10):
 # =============================================================================
 
 def build_trees(val_range=100, num_elements=1000):
-    q = kd_tree()
-    k = quad_tree()
+    k = kd_tree()
+    q = quad_tree()
     for _ in range(num_elements):
         x = random.randrange(val_range)
         y = random.randrange(val_range)
@@ -135,23 +135,36 @@ def test_knn_search(num_searches=50, max_k=7, val_range=100, num_elements=1000, 
 
 # =============================================================================
 
-    def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
-        q_time = 0
-        k_time = 0
+def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
+    #q_time = 0
+    k_time = 0
 
-        print("\nRandom element insertion")
-        print(f"{num_elements} points, x,y:[0,{val_range}]  -  Avg. of {reps} runs")
-        for _ in tqdm(range(reps)):
-            q = kd_tree()
-            k = quad_tree()
-            rand_elements = [(random.randrange(val_range), random.randrange(val_range)) for _ in range(num_elements)]
+    print("\nDeletion testing")
+    print(f"{num_searches} points in popul. of {num_elements}  -  Avg. of {reps} runs")
+    for _ in tqdm(range(reps)):
+        k = kd_tree()
+        #k = quad_tree()
+        rand_elements = [(random.randrange(val_range), random.randrange(val_range)) for _ in range(num_elements)]
+        for item in rand_elements:
+            x, y = item
+            #q.add_element(x, y)
+            k.add_element(x, y)
+        deletion_points = []
+        for _ in range(num_deletions):
+            key = random.randrange(len(rand_elements))
+            deletion_points.append(rand_elements[key])
+            del rand_elements[key]                
 
-            t_s = time()
-            for item in tqdm(rand_elements, position=1, leave=False):
-                x, y = item
-                q.add_element(x, y)
-            t_e = time()
-            q_time += t_e - t_s
+        t_s = time()
+        for item in tqdm(deletion_points, position=1, leave=False):
+            x, y = item
+            _ = k.delete_element(x, y)
+        t_e = time()
+        k_time += t_e - t_s
+    
+    k_time /= reps
+    #q_time /= reps
+    print(f"kD_Tree: {round(k_time, 4)}s   \t\tQuadTree: Heh, weeell...")
 
 # =============================================================================
 
@@ -164,8 +177,13 @@ if __name__ == "__main__":
     max_k = 7
     
     test_random_insertions(val_range=val_range, num_elements=num_elements, reps=reps)
+    
+    test_storage(val_range=val_range, num_elements=num_elements, reps=reps)
+    
+    test_delete(num_deletions=num_searches, val_range=val_range, num_elements=num_elements, reps=reps)
+    
     test_random_searches(num_searches=num_searches,
                          val_range=val_range, num_elements=num_elements, reps=reps)
-    test_storage(val_range=val_range, num_elements=num_elements, reps=reps)
+    
     test_knn_search(num_searches=num_searches, max_k=max_k,
                     val_range=val_range, num_elements=num_elements, reps=reps)
