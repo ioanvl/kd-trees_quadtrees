@@ -31,6 +31,36 @@ class kd_node():
 
 # =============================================================================
 
+    def build(self, point_list):
+        if len(point_list) >= 5:
+            cols = point_list.columns.tolist()
+            df_dict = {
+                'up': point_list[point_list[cols[self.dim]] >= self.coords[self.dim]],
+                'low': point_list[point_list[cols[self.dim]] < self.coords[self.dim]]
+            }
+
+            for key in self.branches:
+                if len(df_dict[key]):
+                    if self.branches[key] is None:
+                        check_dim = (self.dim + 1) % len(self.coords)
+                        df_dict[key]['calc'] = (df_dict[key][cols[check_dim]] - df_dict[key][cols[check_dim]].median()).abs()
+
+                        ind = df_dict[key][df_dict[key]['calc'] == df_dict[key]['calc'].min()].index[0]
+                        point = df_dict[key].loc[ind, :]
+                        self.add_element(point['x'], point['y'])
+                        df_dict[key].drop(ind, inplace=True)
+
+                    self.branches[key].build(df_dict[key])
+            del df_dict
+
+        else:
+            for key in point_list.index:
+                point = point_list.loc[key, :]
+                self.add_element(point['x'], point['y'])
+        del point_list
+
+# =============================================================================
+
     def delete_element(self, x, y):
         if (self.x == x) and (self.y == y):
             if self.branches['up'] is not None:

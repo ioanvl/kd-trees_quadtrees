@@ -36,6 +36,37 @@ class quadtree_node():
 
 # =============================================================================
 
+    def build(self, point_list):
+        if len(point_list) >= 5:
+            cols = point_list.columns.tolist()
+            df_dict = {
+                'ne' :point_list[(point_list['x'] >= self.x) & (point_list['y'] >= self.y)],
+                'se' :point_list[(point_list['x'] >= self.x) & (point_list['y'] < self.y)],
+                'sw' :point_list[(point_list['x'] < self.x) & (point_list['y'] < self.y)],
+                'nw' :point_list[(point_list['x'] < self.x) & (point_list['y'] >= self.y)],
+            }
+
+            for key in self.branches:
+                if len(df_dict[key]):
+                    if self.branches[key] is None:
+                        df_dict[key]['calc'] = (df_dict[key]['x'] - df_dict[key]['x'].median()).abs() + (df_dict[key]['y'] - df_dict[key]['y'].median()).abs()
+
+                        ind = df_dict[key][df_dict[key]['calc'] == df_dict[key]['calc'].min()].index[0]
+                        point = df_dict[key].loc[ind, :]
+                        self.add_element(point['x'], point['y'])
+                        df_dict[key].drop(ind, inplace=True)
+
+                    self.branches[key].build(df_dict[key])
+            del df_dict
+
+        else:
+            for key in point_list.index:
+                point = point_list.loc[key, :]
+                self.add_element(point['x'], point['y'])
+        del point_list
+
+# =============================================================================
+
     def search_element(self, x,y):
         if (self.x == x) and (self.y == y):
             return True

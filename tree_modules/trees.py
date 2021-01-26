@@ -1,3 +1,5 @@
+import pandas as pd
+
 from .kdtree import kd_node
 from .quadtree import quadtree_node
 
@@ -23,8 +25,19 @@ class tree():
         else:
             return [False]
         
-    def build(self):
-        pass
+    
+    def build(self, point_list):        
+        point_list = pd.DataFrame(point_list, columns=['x', 'y'])
+
+        if self.root is None:
+            point_list['calc'] = (point_list['x'] - point_list['x'].median()).abs() + (point_list['y'] - point_list['y'].median()).abs()
+            ind = point_list[point_list['calc'] == point_list['calc'].min()].index[0]
+            point = point_list.loc[ind, :]
+
+            self.add_element(point['x'], point['y'])
+            point_list.drop(ind, inplace=True)
+        
+        self.root.build(point_list)
 
     def update(self):
         pass
