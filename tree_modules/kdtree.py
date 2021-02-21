@@ -271,7 +271,7 @@ class kd_node():
             print(':')
             for x in self.branches:
                 blank = ''
-                for i in range(lv+1):
+                for _ in range(lv+1):
                     blank += '  '
                 print(f"{blank}{x}:", end='')
                 

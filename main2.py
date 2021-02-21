@@ -67,8 +67,9 @@ def test_build(val_range=100, num_elements=1000, reps=10):
     
     
 if __name__ == "__main__":
-    k = kd_tree()
-    rand_elements = [(random.randrange(2000), random.randrange(2000)) for _ in range(20000)]
+    #k = kd_tree()
+    #rand_elements = [(random.randrange(2000), random.randrange(2000)) for _ in range(20000)]
     print('go')
-    k.build(rand_elements)
+    #k.build(rand_elements)
+    test_build()
     print('done')

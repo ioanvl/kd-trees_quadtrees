@@ -66,8 +66,8 @@ def test_build(val_range=100, num_elements=1000, reps=10):
 # =============================================================================
 
 def build_trees(val_range=100, num_elements=1000):
-    k = kd_tree()
     q = quad_tree()
+    k = kd_tree()
     for _ in range(num_elements):
         x = random.randrange(val_range)
         y = random.randrange(val_range)
@@ -171,7 +171,7 @@ def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
     print(f"{num_searches} points in popul. of {num_elements}  -  Avg. of {reps} runs")
     for _ in tqdm(range(reps)):
         k = kd_tree()
-        #k = quad_tree()
+        #q = quad_tree()
         rand_elements = [(random.randrange(val_range), random.randrange(val_range)) for _ in range(num_elements)]
         for item in rand_elements:
             x, y = item
@@ -199,14 +199,15 @@ def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
 if __name__ == "__main__":
     print("Hi!")
     reps = 10
-    val_range = 500
+    val_range = 250
     num_elements = 20000
     num_searches = 1000
     max_k = 7
+    reduction = 5 
     
     test_random_insertions(val_range=val_range, num_elements=num_elements, reps=reps)
     
-    # test_build(val_range=val_range, num_elements=num_elements, reps=reps)
+    test_build(val_range=int(val_range / reduction), num_elements=int(num_elements / (reduction ** 2)), reps=reps)
     
     test_storage(val_range=val_range, num_elements=num_elements, reps=reps)
     

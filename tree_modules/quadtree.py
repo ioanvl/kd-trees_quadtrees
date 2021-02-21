@@ -39,11 +39,13 @@ class quadtree_node():
     def build(self, point_list):
         if len(point_list) >= 5:
             cols = point_list.columns.tolist()
+            x_up = point_list[(point_list['x'] >= self.x)]
+            x_d = point_list[(point_list['x'] < self.x)]
             df_dict = {
-                'ne' :point_list[(point_list['x'] >= self.x) & (point_list['y'] >= self.y)],
-                'se' :point_list[(point_list['x'] >= self.x) & (point_list['y'] < self.y)],
-                'sw' :point_list[(point_list['x'] < self.x) & (point_list['y'] < self.y)],
-                'nw' :point_list[(point_list['x'] < self.x) & (point_list['y'] >= self.y)],
+                'ne' :x_up[(x_up['y'] >= self.y)],
+                'se' :x_up[(x_up['y'] < self.y)],
+                'nw' :x_d[(x_d['y'] >= self.y)],
+                'sw' :x_d[(x_d['y'] < self.y)],
             }
 
             for key in self.branches:
@@ -209,7 +211,7 @@ class quadtree_node():
             print(':')
             for x in self.branches:
                 blank = ''
-                for i in range(lv+1):
+                for _ in range(lv+1):
                     blank += '  '
                 print(f"{blank}{x}:", end='')
                 
