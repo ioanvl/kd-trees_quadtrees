@@ -2,10 +2,11 @@ from math import sqrt
 import copy
 
 class quadtree_node():
-    def __init__(self, x: float, y: float ):
+    def __init__(self, x: float, y: float, parent=None ):
         self.x = x
         self.y = y
         self.coords = [x, y]
+        self.parent = parent
 
         self.branches = {
             'nw': None,
@@ -30,7 +31,7 @@ class quadtree_node():
     def add_element(self, x: float, y: float):
         point = self.get_quadrant(x, y)
         if self.branches[point] is None:
-            self.branches[point] = quadtree_node(x, y)
+            self.branches[point] = quadtree_node(x, y, parent=self)
         else:
             self.branches[point].add_element(x, y)
 
@@ -66,6 +67,39 @@ class quadtree_node():
                 point = point_list.loc[key, :]
                 self.add_element(point['x'], point['y'])
         del point_list
+        try:
+            del x_up, x_d
+        except:
+            pass
+
+# =============================================================================
+
+    def delete_element(self, x, y):
+        if (self.x == x) and (self.y == y):
+            reinsert_points = []
+            for i in self.branches:
+                if self.branches[i] is not None:
+                    branch_points = self.branches[i].storage(deletion=True)
+                    reinsert_points.extend(branch_points)
+            
+            self.parent.delete_and_reinsert(self, reinsert_points)
+            return True
+
+        else:
+            point = self.get_quadrant(x, y)
+            if self.branches[point] is not None:
+                return self.branches[point].delete_element(x,y)
+            else:
+                return False
+
+    def delete_and_reinsert(self, leaf, resinsert_list):
+        for i in self.branches:
+            if self.branches[i] is leaf:
+                self.branches[i] = None
+        
+        for point in resinsert_list:
+            x, y = point
+            self.add_element(x, y)
 
 # =============================================================================
 
@@ -182,7 +216,7 @@ class quadtree_node():
 
 # =============================================================================
 
-    def storage(self, prev_list=None):
+    def storage(self, prev_list=None, deletion=False):
         if prev_list is None:
             prev_list = []
 
@@ -192,6 +226,11 @@ class quadtree_node():
         for i in self.branches:
             if self.branches[i] is not None:
                 prev_list = self.branches[i].storage(prev_list)
+        
+        if deletion:
+            for i in self.branches:
+                del self.branches[i]
+                self.branches[i] = None
 
         return prev_list
 

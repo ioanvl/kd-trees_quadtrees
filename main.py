@@ -164,18 +164,18 @@ def test_knn_search(num_searches=50, max_k=7, val_range=100, num_elements=1000, 
 # =============================================================================
 
 def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
-    #q_time = 0
+    q_time = 0
     k_time = 0
 
     print("\nDeletion testing")
     print(f"{num_searches} points in popul. of {num_elements}  -  Avg. of {reps} runs")
     for _ in tqdm(range(reps)):
         k = kd_tree()
-        #q = quad_tree()
+        q = quad_tree()
         rand_elements = [(random.randrange(val_range), random.randrange(val_range)) for _ in range(num_elements)]
         for item in rand_elements:
             x, y = item
-            #q.add_element(x, y)
+            q.add_element(x, y)
             k.add_element(x, y)
         deletion_points = []
         for _ in range(num_deletions):
@@ -189,10 +189,17 @@ def test_delete(num_deletions, val_range=100, num_elements=1000, reps=10):
             _ = k.delete_element(x, y)
         t_e = time()
         k_time += t_e - t_s
+        
+        t_s = time()
+        for item in tqdm(deletion_points, position=1, leave=False):
+            x, y = item
+            _ = q.delete_element(x, y)
+        t_e = time()
+        q_time += t_e - t_s
     
     k_time /= reps
-    #q_time /= reps
-    print(f"kD_Tree: {round(k_time, 4)}s   \t\tQuadTree: Heh, weeell...")
+    q_time /= reps
+    print(f"kD_Tree: {round(k_time, 4)}s   \t\tQuadTree: {round(q_time, 4)}s")
 
 # =============================================================================
 

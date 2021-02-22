@@ -60,7 +60,14 @@ class quad_tree(tree):
         if self.root is not None:
             self.root.add_element(x, y)
         else:
-            self.root = quadtree_node(x, y)
+            self.root = quadtree_node(x, y, parent=self)
+    
+    def delete_and_reinsert(self, leaf, reinsert_list):
+        self.root = None
+        for point in reinsert_list:
+            x, y = point
+            self.add_element(x, y)
+            
 
 class kd_tree(tree):
     def add_element(self, x, y):
